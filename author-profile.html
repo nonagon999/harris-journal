@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Author Profile - Harris Journal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .profile-container {
+            max-width: 1200px;
+            margin: 100px auto;
+            padding: 20px;
+        }
+
+        .profile-header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #e1e1e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #666;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-avatar:hover::after {
+            content: 'Change Photo';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .profile-avatar:hover::after {
+            opacity: 1;
+        }
+
+        #photo-upload {
+            display: none;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #003366;
+            margin-bottom: 10px;
+        }
+
+        .profile-email {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #003366;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .profile-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .journals-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #003366;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e1e1e1;
+        }
+
+        .journal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .journal-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .journal-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .journal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #003366;
+            margin-bottom: 10px;
+        }
+
+        .journal-meta {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .journal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e1e1e1;
+        }
+
+        .journal-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn {
+            background: #003366;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #002244;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .add-journal-btn {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .add-journal-btn:hover {
+            background: #218838;
+        }
+
+        /* Edit Modal Styles */
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-modal.active {
+            display: flex;
+        }
+
+        .edit-modal-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .edit-modal-header {
+            padding: 20px;
+            background: #003366;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .edit-modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .edit-form-group {
+            margin-bottom: 20px;
+        }
+
+        .edit-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .edit-form-group input,
+        .edit-form-group textarea,
+        .edit-form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e1e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .edit-form-group input:focus,
+        .edit-form-group textarea:focus,
+        .edit-form-group select:focus {
+            border-color: #003366;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,51,102,0.1);
+        }
+
+        .edit-modal-actions {
+            padding: 20px;
+            border-top: 1px solid #e1e1e1;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .edit-modal-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn {
+            background: #003366;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #002244;
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #5a6268;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .activity-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e1e1e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .activity-time {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .profile-container {
+                margin: 50px 20px;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .profile-stats {
+                justify-content: center;
+            }
+
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="image/logo.png" alt="Harris Memorial College Logo">
+                <h3>Harris Memorial College, Inc.</h3>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="journal-library.html">Journal Library</a></li>
+                    <li><a href="journal.html">Upload Journal</a></li>
+                    <li><a href="#" onclick="openEditProfileModal()">Edit Profile</a></li>
+                    <li><a href="#" onclick="logout()">Logout</a></li>
+                    <li><a href="index.html#contact">Contact Us</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-avatar" onclick="document.getElementById('photo-upload').click()">
+                <input type="file" id="photo-upload" accept="image/*" onchange="uploadProfilePhoto(event)">
+                <i class="fas fa-user" id="default-avatar"></i>
+                <img id="profile-photo" style="display: none;">
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-name" id="profile-name">Loading...</h1>
+                <div class="profile-email" id="profile-email">Loading...</div>
+                <div class="profile-stats">
+                    <div class="stat-box">
+                        <div class="stat-number" id="total-journals">0</div>
+                        <div class="stat-label">Journals Published</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="total-views">0</div>
+                        <div class="stat-label">Total Views</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="total-citations">0</div>
+                        <div class="stat-label">Total Citations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-content">
+            <div class="journals-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title">Published Journals</h2>
+                    <button class="add-journal-btn" onclick="window.location.href='journal.html'">
+                        <i class="fas fa-plus"></i> Add New Journal
+                    </button>
+                </div>
+                <div class="journal-list" id="journal-list">
+                    <!-- Journals will be loaded here -->
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="activity-section">
+                    <h2 class="section-title">Recent Activity</h2>
+                    <div class="activity-list" id="activity-list">
+                        <!-- Activity will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Edit Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h2>Edit Journal</h2>
+                <span class="modal-close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="edit-modal-body">
+                <form id="editJournalForm">
+                    <div class="edit-form-group">
+                        <label for="edit-title">Title</label>
+                        <input type="text" id="edit-title" required>
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="edit-category">Category</label>
+                        <select id="edit-category" required>
+                            <option value="education">Education</option>
+                            <option value="research">Research</option>
+                            <option value="technology">Technology</option>
+                            <option value="science">Science</option>
+                        </select>
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="edit-description">Abstract</label>
+                        <textarea id="edit-description" rows="4" required></textarea>
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="edit-authors">Authors</label>
+                        <input type="text" id="edit-authors" placeholder="Separate multiple authors with commas">
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="edit-editors">Editors</label>
+                        <input type="text" id="edit-editors" placeholder="Separate multiple editors with commas">
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="edit-associate-editors">Associate Editors</label>
+                        <input type="text" id="edit-associate-editors" placeholder="Separate multiple associate editors with commas">
+                    </div>
+                </form>
+            </div>
+            <div class="edit-modal-actions">
+                <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+                <button class="save-btn" onclick="saveJournalChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Edit Profile Modal -->
+    <div class="edit-modal" id="editProfileModal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h2>Edit Profile</h2>
+                <span class="modal-close" onclick="closeEditProfileModal()">&times;</span>
+            </div>
+            <div class="edit-modal-body">
+                <form id="editProfileForm">
+                    <div class="edit-form-group">
+                        <label for="edit-name">Full Name</label>
+                        <input type="text" id="edit-name" required>
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="edit-email">Email</label>
+                        <input type="email" id="edit-email" required>
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="current-password">Current Password</label>
+                        <input type="password" id="current-password" required>
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="new-password">New Password (leave blank to keep current)</label>
+                        <input type="password" id="new-password">
+                    </div>
+                    <div class="edit-form-group">
+                        <label for="confirm-password">Confirm New Password</label>
+                        <input type="password" id="confirm-password">
+                    </div>
+                </form>
+            </div>
+            <div class="edit-modal-actions">
+                <button class="cancel-btn" onclick="closeEditProfileModal()">Cancel</button>
+                <button class="save-btn" onclick="saveProfileChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentEditingJournalId = null;
+
+        // Function to load user profile
+        async function loadProfile() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (!user) {
+                    window.location.href = 'journal.html';
+                    return;
+                }
+
+                // Update profile information
+                document.getElementById('profile-name').textContent = user.name;
+                document.getElementById('profile-email').textContent = user.email;
+
+                // Update profile photo
+                const profilePhoto = document.getElementById('profile-photo');
+                const defaultAvatar = document.getElementById('default-avatar');
+                
+                if (user.profilePhoto) {
+                    profilePhoto.src = user.profilePhoto;
+                    profilePhoto.style.display = 'block';
+                    defaultAvatar.style.display = 'none';
+                } else {
+                    profilePhoto.style.display = 'none';
+                    defaultAvatar.style.display = 'block';
+                }
+
+                // Load user's journals
+                const response = await fetch('http://localhost:3000/api/journals');
+                const journals = await response.json();
+                
+                // Filter journals by current user and sort by upload date (newest first)
+                const userJournals = journals
+                    .filter(journal => journal.authors && journal.authors.includes(user.name))
+                    .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+
+                // Update stats
+                document.getElementById('total-journals').textContent = userJournals.length;
+                const totalViews = userJournals.reduce((sum, journal) => sum + (journal.views || 0), 0);
+                const totalCitations = userJournals.reduce((sum, journal) => sum + (journal.citations || 0), 0);
+                document.getElementById('total-views').textContent = totalViews;
+                document.getElementById('total-citations').textContent = totalCitations;
+
+                // Display journals
+                const journalList = document.getElementById('journal-list');
+                journalList.innerHTML = userJournals.length ? '' : '<p>No journals published yet.</p>';
+
+                userJournals.forEach(journal => {
+                    const journalItem = document.createElement('div');
+                    journalItem.className = 'journal-item';
+                    journalItem.innerHTML = `
+                        <div class="journal-title">${journal.title}</div>
+                        <div class="journal-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-eye"></i>
+                                <span>${journal.views || 0} views</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-quote-right"></i>
+                                <span>${journal.citations || 0} citations</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-download"></i>
+                                <span>${journal.downloads || 0} downloads</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>${new Date(journal.uploadDate).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        <div class="journal-actions">
+                            <button class="journal-btn edit-btn" onclick="editJournal('${journal._id}')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="journal-btn delete-btn" onclick="deleteJournal('${journal._id}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    `;
+                    journalList.appendChild(journalItem);
+                });
+
+                // Load recent activity
+                const activityList = document.getElementById('activity-list');
+                const activities = userJournals.map(journal => ({
+                    type: 'journal',
+                    title: `Published "${journal.title}"`,
+                    time: new Date(journal.uploadDate)
+                })).sort((a, b) => b.time - a.time).slice(0, 5);
+
+                activityList.innerHTML = activities.length ? '' : '<p>No recent activity.</p>';
+
+                activities.forEach(activity => {
+                    const activityItem = document.createElement('div');
+                    activityItem.className = 'activity-item';
+                    activityItem.innerHTML = `
+                        <div class="activity-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-title">${activity.title}</div>
+                            <div class="activity-time">${activity.time.toLocaleDateString()}</div>
+                        </div>
+                    `;
+                    activityList.appendChild(activityItem);
+                });
+
+                // Check if we just published a new journal
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('new') === 'true') {
+                    const message = document.createElement('div');
+                    message.style.position = 'fixed';
+                    message.style.top = '20px';
+                    message.style.right = '20px';
+                    message.style.padding = '15px 25px';
+                    message.style.backgroundColor = '#28a745';
+                    message.style.color = 'white';
+                    message.style.borderRadius = '5px';
+                    message.style.zIndex = '1000';
+                    message.textContent = 'Your journal has been published successfully!';
+                    document.body.appendChild(message);
+
+                    // Remove the message after 3 seconds
+                    setTimeout(() => {
+                        message.remove();
+                        // Remove the 'new' parameter from URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }, 3000);
+                }
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                alert('Error loading profile. Please try again later.');
+            }
+        }
+
+        // Function to edit journal
+        async function editJournal(id) {
+            try {
+                const response = await fetch(`http://localhost:3000/api/journals/${id}`);
+                const journal = await response.json();
+
+                currentEditingJournalId = id;
+                
+                // Populate form with journal data
+                document.getElementById('edit-title').value = journal.title;
+                document.getElementById('edit-category').value = journal.category;
+                document.getElementById('edit-description').value = journal.description;
+                document.getElementById('edit-authors').value = journal.authors.join(', ');
+                document.getElementById('edit-editors').value = journal.editors.join(', ');
+                document.getElementById('edit-associate-editors').value = journal.associateEditors.join(', ');
+
+                // Show modal
+                document.getElementById('editModal').classList.add('active');
+            } catch (error) {
+                console.error('Error loading journal for edit:', error);
+                alert('Error loading journal details. Please try again.');
+            }
+        }
+
+        // Function to save journal changes
+        async function saveJournalChanges() {
+            if (!currentEditingJournalId) {
+                alert('No journal selected for editing');
+                return;
+            }
+
+            try {
+                const formData = {
+                    title: document.getElementById('edit-title').value,
+                    category: document.getElementById('edit-category').value,
+                    description: document.getElementById('edit-description').value,
+                    authors: document.getElementById('edit-authors').value.split(',').map(a => a.trim()).filter(a => a),
+                    editors: document.getElementById('edit-editors').value.split(',').map(e => e.trim()).filter(e => e),
+                    associateEditors: document.getElementById('edit-associate-editors').value.split(',').map(e => e.trim()).filter(e => e)
+                };
+
+                const response = await fetch(`http://localhost:3000/api/journals/${currentEditingJournalId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update journal');
+                }
+
+                // Close modal
+                closeEditModal();
+
+                // Show success message
+                const message = document.createElement('div');
+                message.style.position = 'fixed';
+                message.style.top = '20px';
+                message.style.right = '20px';
+                message.style.padding = '15px 25px';
+                message.style.backgroundColor = '#28a745';
+                message.style.color = 'white';
+                message.style.borderRadius = '5px';
+                message.style.zIndex = '1000';
+                message.textContent = 'Journal updated successfully';
+                document.body.appendChild(message);
+
+                // Reload journals
+                setTimeout(() => {
+                    message.remove();
+                    loadProfile();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error updating journal:', error);
+                alert('Error updating journal: ' + error.message);
+            }
+        }
+
+        // Function to delete journal
+        async function deleteJournal(id) {
+            if (!confirm('Are you sure you want to delete this journal? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/journals/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete journal');
+                }
+
+                // Show success message
+                const message = document.createElement('div');
+                message.style.position = 'fixed';
+                message.style.top = '20px';
+                message.style.right = '20px';
+                message.style.padding = '15px 25px';
+                message.style.backgroundColor = '#28a745';
+                message.style.color = 'white';
+                message.style.borderRadius = '5px';
+                message.style.zIndex = '1000';
+                message.textContent = 'Journal deleted successfully';
+                document.body.appendChild(message);
+
+                // Reload journals
+                setTimeout(() => {
+                    message.remove();
+                    loadProfile();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error deleting journal:', error);
+                alert('Error deleting journal: ' + error.message);
+            }
+        }
+
+        // Function to close edit modal
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            currentEditingJournalId = null;
+        }
+
+        // Function to logout
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('user');
+                window.location.href = 'journal.html';
+            }
+        }
+
+        // Function to open edit profile modal
+        function openEditProfileModal() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                alert('Please login to edit your profile');
+                window.location.href = 'journal.html';
+                return;
+            }
+
+            // Populate form with current user data
+            document.getElementById('edit-name').value = user.name;
+            document.getElementById('edit-email').value = user.email;
+            document.getElementById('editProfileModal').classList.add('active');
+        }
+
+        // Function to close edit profile modal
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').classList.remove('active');
+            document.getElementById('editProfileForm').reset();
+        }
+
+        // Function to save profile changes
+        async function saveProfileChanges() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                alert('Please login to edit your profile');
+                return;
+            }
+
+            const name = document.getElementById('edit-name').value;
+            const email = document.getElementById('edit-email').value;
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (!name || !email || !currentPassword) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            if (newPassword && newPassword !== confirmPassword) {
+                alert('New passwords do not match');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/update-profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        currentPassword,
+                        newPassword: newPassword || undefined
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message);
+                }
+
+                // Update local storage with new user data
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                // Show success message
+                const message = document.createElement('div');
+                message.style.position = 'fixed';
+                message.style.top = '20px';
+                message.style.right = '20px';
+                message.style.padding = '15px 25px';
+                message.style.backgroundColor = '#28a745';
+                message.style.color = 'white';
+                message.style.borderRadius = '5px';
+                message.style.zIndex = '1000';
+                message.textContent = 'Profile updated successfully';
+                document.body.appendChild(message);
+
+                // Close modal and reload profile
+                setTimeout(() => {
+                    message.remove();
+                    closeEditProfileModal();
+                    loadProfile();
+                }, 1500);
+
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        // Add this function to handle profile photo upload
+        async function uploadProfilePhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+
+            // Validate file size (2MB limit)
+            const maxSize = 2 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('Image size should not exceed 2MB');
+                return;
+            }
+
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                alert('Please login to upload a profile photo');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('email', user.email);
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message);
+                }
+
+                // Update profile photo display
+                const profilePhoto = document.getElementById('profile-photo');
+                const defaultAvatar = document.getElementById('default-avatar');
+                
+                profilePhoto.src = data.photoUrl;
+                profilePhoto.style.display = 'block';
+                defaultAvatar.style.display = 'none';
+
+                // Update user data in localStorage
+                user.profilePhoto = data.photoUrl;
+                localStorage.setItem('user', JSON.stringify(user));
+
+                // Show success message
+                const message = document.createElement('div');
+                message.style.position = 'fixed';
+                message.style.top = '20px';
+                message.style.right = '20px';
+                message.style.padding = '15px 25px';
+                message.style.backgroundColor = '#28a745';
+                message.style.color = 'white';
+                message.style.borderRadius = '5px';
+                message.style.zIndex = '1000';
+                message.textContent = 'Profile photo updated successfully';
+                document.body.appendChild(message);
+
+                setTimeout(() => {
+                    message.remove();
+                }, 3000);
+
+            } catch (error) {
+                console.error('Error uploading profile photo:', error);
+                alert('Error uploading profile photo: ' + error.message);
+            }
+        }
+
+        // Load profile when page loads
+        document.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+</body>
+</html> 

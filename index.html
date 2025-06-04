@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harris Journal of Education</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #003366;
+            --secondary-color: #4CAF50;
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --border-color: #e1e1e1;
+            --hover-color: #002244;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .hero-section {
+            background: linear-gradient(rgba(0, 51, 102, 0.9), rgba(0, 51, 102, 0.9)),
+                        url('image/campus.jpg') center/cover;
+            color: white;
+            padding: 120px 20px;
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .cta-button {
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .primary-button {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .primary-button:hover {
+            background: #3d8b40;
+            transform: translateY(-2px);
+        }
+
+        .secondary-button {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .secondary-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .features-section {
+            padding: 80px 20px;
+            background: var(--light-bg);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .feature-description {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .stats-section {
+            padding: 60px 20px;
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 20px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .welcome-section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .welcome-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .welcome-text {
+            padding-right: 30px;
+        }
+
+        .welcome-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .welcome-description {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .welcome-image {
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .welcome-content {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-text {
+                padding-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="image/logo.png" alt="Harris Memorial College Logo">
+                <h3>Harris Memorial College, Inc.</h3>
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="journal-library.html">Journal Library</a></li>
+                    <li><a href="journal.html">Upload Journal</a></li>
+                    <li><a href="author-profile.html">My Profile</a></li>
+                    <li><a href="#contact">Contact Us</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <div class="nav-overlay" onclick="toggleMenu()"></div>
+
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Welcome to Harris Journal of Education</h1>
+            <h3 class="hero-subtitle">Advancing knowledge through scholarly research and academic excellence</h3>
+            <div class="cta-buttons">
+                <a href="journal-library.html"  class="cta-button primary-button">Browse Journals</a>
+                <a href="journal.html" class="cta-button secondary-button">Submit Your Work</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="welcome-section">
+        <div class="welcome-content">
+            <div class="welcome-text">
+                <h2 class="welcome-title">Welcome to Our Academic Community</h2>
+                <p class="welcome-description">
+                    The Harris Journal of Education is dedicated to fostering academic excellence and promoting scholarly research in the field of education. Our platform serves as a bridge between researchers, educators, and students, facilitating the exchange of knowledge and innovative ideas.
+                </p>
+                <p class="welcome-description">
+                    We welcome submissions from educators, researchers, and scholars who are passionate about advancing educational practices and theories. Join our community of academic professionals and contribute to the growing body of knowledge in education.
+                </p>
+            </div>
+            <img src="image/education.jpg" alt="Education" class="welcome-image">
+        </div>
+    </section>
+
+    <section class="features-section">
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-book-open feature-icon"></i>
+                <h3 class="feature-title">Academic Excellence</h3>
+                <p class="feature-description">Access high-quality research papers and scholarly articles from leading educators and researchers in the field.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-users feature-icon"></i>
+                <h3 class="feature-title">Global Community</h3>
+                <p class="feature-description">Connect with educators and researchers from around the world, fostering international collaboration.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-chart-line feature-icon"></i>
+                <h3 class="feature-title">Research Impact</h3>
+                <p class="feature-description">Track citations and measure the impact of your research through our comprehensive analytics system.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">10+</div>
+                <div class="stat-label">Published Journals</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">1000+</div>
+                <div class="stat-label">Active Researchers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">10+</div>
+                <div class="stat-label">Countries</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">1k+</div>
+                <div class="stat-label">Monthly Readers</div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Contact Us</h3> 
+                <h4>Email: info@harris.edu.ph</h4>
+                <h4>Phone: +639 226 506 490</h4>
+                <h4>Address: G.K. Bunyi St., Dolores,Taytay, Rizal</h4>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="journal-library.html">Journal Library</a></li>
+                    <li><a href="journal.html">Submit Journal</a></li>
+                    <li><a href="author-profile.html">Author Profile</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Follow Us</h4>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <h3>&copy; 2025 Harris Journal of Education. All rights reserved.</h3>
+        </div>
+    </footer>
+
+    <script>
+    function toggleMenu() {
+        const hamburger = document.querySelector('.hamburger');
+        const nav = document.querySelector('.main-nav');
+        const overlay = document.querySelector('.nav-overlay');
+        
+        hamburger.classList.toggle('active');
+        nav.classList.toggle('active');
+        overlay.classList.toggle('active');
+        
+        // Prevent body scrolling when menu is open
+        document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
+    }
+    </script>
+</body>
+</html> 

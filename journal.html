@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harris Journal - Upload and Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .journal-container {
+            max-width: 1200px;
+            margin: 100px auto;
+            padding: 20px;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            max-width: 500px;
+            margin: 100px auto;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .auth-tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 18px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .auth-tab.active {
+            color: #003366;
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #003366;
+            border-radius: 3px;
+        }
+
+        .auth-form {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: #003366;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,51,102,0.1);
+        }
+
+        .submit-btn {
+            background-color: #003366;
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #002244;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,51,102,0.2);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Add a decorative element */
+        .auth-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #003366, #0066cc);
+            border-radius: 15px 15px 0 0;
+        }
+
+        /* Add responsive design */
+        @media (max-width: 768px) {
+            .auth-section {
+                margin: 50px 20px;
+                padding: 30px 20px;
+            }
+
+            .auth-tab {
+                padding: 10px 15px;
+                font-size: 16px;
+            }
+
+            .form-group input {
+                padding: 10px 12px;
+            }
+
+            .submit-btn {
+                padding: 12px 20px;
+            }
+        }
+
+        /* Add some animation to the form */
+        .form-group {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.2s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+        .form-group:nth-child(4) { animation-delay: 0.4s; }
+
+        /* Add a subtle background pattern */
+        body {
+            background-color: #f8f9fa;
+            background-image: 
+                radial-gradient(circle at 100% 100%, rgba(0,51,102,0.05) 0%, transparent 50%),
+                radial-gradient(circle at 0% 0%, rgba(0,51,102,0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Add a logo or title */
+        .auth-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #003366;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* Add a welcome message */
+        .auth-welcome {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .journal-upload {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .journal-upload.active {
+            display: block;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #003366;
+        }
+
+        .journal-list {
+            margin-top: 30px;
+        }
+
+        .journal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .journal-item:last-child {
+            border-bottom: none;
+        }
+
+        .journal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .edit-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .status-pending {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .status-approved {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .status-rejected {
+            color: #c0392b;
+            font-weight: bold;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .journal-filter {
+            margin-bottom: 20px;
+        }
+
+        .journal-search {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-group.error input {
+            border-color: #dc3545;
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        .declaration-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .declaration-section h3 {
+            color: #003366;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 4px;
+            width: auto;
+        }
+
+        .checkbox-group label {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #444;
+        }
+
+        .checkbox-group input[type="checkbox"]:required:invalid + label {
+            color: #dc3545;
+        }
+
+        .checkbox-group input[type="checkbox"]:required:valid + label {
+            color: #28a745;
+        }
+
+        /* Add notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+
+        .notification.success {
+            background-color: #4CAF50;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notification.hide {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="image/logo.png" alt="Harris Memorial College Logo">
+                <h3>Harris Memorial College, Inc.</h3>
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="journal-library.html">Journal Library</a></li>
+                    <li><a href="journal.html">Upload Journal</a></li>
+                    <li><a href="author-profile.html">My Profile</a></li>
+                    <li><a href="index.html#contact">Contact Us</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <div class="nav-overlay" onclick="toggleMenu()"></div>
+
+    <div class="journal-container">
+        <div class="auth-section">
+            <div class="auth-title">Harris Journal</div>
+            <div class="auth-welcome">Welcome to Harris Journal. Please login or register to continue.</div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showTab('login')">Login</button>
+                <button class="auth-tab" onclick="showTab('register')">Register</button>
+            </div>
+
+            <form id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label for="register-name">Full Name</label>
+                    <input type="text" id="register-name" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" placeholder="Create a password" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm">Confirm Password</label>
+                    <input type="password" id="register-confirm" placeholder="Confirm your password" required>
+                </div>
+                <button type="submit" class="submit-btn">Create Account</button>
+            </form>
+
+            <form id="login-form" class="auth-form active">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="submit-btn">Sign In</button>
+            </form>
+        </div>
+
+        <div class="journal-upload">
+            <h2>Upload Journal</h2>
+            <div class="upload-area" onclick="document.getElementById('journal-file').click()">
+                <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                <p>Click or drag files to upload</p>
+                <input type="file" id="journal-file" hidden accept=".pdf,.doc,.docx">
+            </div>
+            <div class="form-group">
+                <label for="journal-title">Journal Title</label>
+                <input type="text" id="journal-title" required>
+            </div>
+            <div class="form-group">
+                <label for="journal-category">Category</label>
+                <select id="journal-category" required>
+                    <option value="">Select Category</option>
+                    <option value="education">Education</option>
+                    <option value="research">Research</option>
+                    <option value="technology">Technology</option>
+                    <option value="science">Science</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="journal-description">Abstract</label>
+                <textarea id="journal-description" rows="4" style="width: 100%; padding: 8px;"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="journal-authors">Author/(s)</label>
+                <input type="text" id="journal-authors" placeholder="Separate multiple authors with commas">
+            </div>
+            <div class="form-group">
+                <label for="journal-editors">Editor/(s) (Optional)</label>
+                <input type="text" id="journal-editors" placeholder="Separate multiple editors with commas">
+            </div>
+            <div class="form-group">
+                <label for="journal-associate-editors">Associate Editor/(s) (Optional)</label>
+                <input type="text" id="journal-associate-editors" placeholder="Separate multiple associate editors with commas">
+            </div>
+
+            <div class="declaration-section">
+                <h3>Declaration of Originality</h3>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="originality-declaration" required>
+                    <label for="originality-declaration">I confirm that this manuscript is my original work and has not been published or submitted elsewhere.</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="ethics-declaration" required>
+                    <label for="ethics-declaration">I agree to the journal's policies on plagiarism and ethics.</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="permission-declaration" required>
+                    <label for="permission-declaration">I grant permission for editorial revisions and peer review.</label>
+                </div>
+            </div>
+
+            <button class="submit-btn" onclick="uploadJournal()">Submit Journal</button>
+        
+            <div class="journal-list">
+                <h3>My Journals</h3>
+                <div id="my-journals-container">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API URL configuration
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : window.location.origin;
+
+        function showTab(tabName) {
+            // Hide all forms
+            document.querySelectorAll('.auth-form').forEach(form => {
+                form.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.auth-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected form and activate tab
+            document.getElementById(`${tabName}-form`).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Handle file selection
+        document.getElementById('journal-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size);
+                
+                // Validate file type
+                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please upload a PDF or Word document file');
+                    this.value = ''; // Clear the file input
+                    document.querySelector('.upload-area p').textContent = 'Click or drag files to upload';
+                    return;
+                }
+
+                // Validate file size
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (file.size > maxSize) {
+                    alert('File size should not exceed 10MB');
+                    this.value = ''; // Clear the file input
+                    document.querySelector('.upload-area p').textContent = 'Click or drag files to upload';
+                    return;
+                }
+
+                document.querySelector('.upload-area p').textContent = `Selected file: ${file.name}`;
+            }
+        });
+
+        // Handle drag and drop
+        const uploadArea = document.querySelector('.upload-area');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#003366';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ddd';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                console.log('Dropped file:', file.name, 'Type:', file.type, 'Size:', file.size);
+                
+                // Validate file type
+                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please upload a PDF or Word document file');
+                    return;
+                }
+
+                // Validate file size
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (file.size > maxSize) {
+                    alert('File size should not exceed 10MB');
+                    return;
+                }
+
+                document.getElementById('journal-file').files = e.dataTransfer.files;
+                document.querySelector('.upload-area p').textContent = `Selected file: ${file.name}`;
+            }
+        });
+
+        // Handle login form submission
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message);
+                }
+
+                // Store user info in localStorage
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Show success message
+                const message = document.createElement('div');
+                message.style.position = 'fixed';
+                message.style.top = '20px';
+                message.style.right = '20px';
+                message.style.padding = '15px 25px';
+                message.style.backgroundColor = '#28a745';
+                message.style.color = 'white';
+                message.style.borderRadius = '5px';
+                message.style.zIndex = '1000';
+                message.textContent = 'Login successful! Redirecting to your profile...';
+                document.body.appendChild(message);
+
+                // Redirect to author profile after a short delay
+                setTimeout(() => {
+                    message.remove();
+                    window.location.href = 'author-profile.html';
+                }, 1500);
+                
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        // Update the register form submission handler
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message);
+                }
+
+                // Store user info in localStorage
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Redirect to author profile page
+                window.location.href = 'author-profile.html';
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        // Check if user is already logged in
+        function checkAuth() {
+            const user = localStorage.getItem('user');
+            if (user) {
+                document.querySelector('.journal-upload').classList.add('active');
+                document.querySelector('.auth-section').style.display = 'none';
+            }
+        }
+
+        // Check auth status when page loads
+        document.addEventListener('DOMContentLoaded', checkAuth);
+
+        // Handle logout
+        function logout() {
+            localStorage.removeItem('user');
+            document.querySelector('.journal-upload').classList.remove('active');
+            document.querySelector('.auth-section').style.display = 'block';
+            showTab('login');
+        }
+
+        // Add logout button to header
+        const nav = document.querySelector('.main-nav ul');
+        const logoutLi = document.createElement('li');
+        logoutLi.innerHTML = '<a href="#" onclick="logout()">Logout</a>';
+        nav.appendChild(logoutLi);
+
+        async function uploadJournal() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                alert('Please login to upload a journal');
+                window.location.href = 'journal.html';
+                return;
+            }
+
+            const title = document.getElementById('journal-title').value;
+            const category = document.getElementById('journal-category').value;
+            const description = document.getElementById('journal-description').value;
+            const authors = document.getElementById('journal-authors').value;
+            const editors = document.getElementById('journal-editors').value;
+            const associateEditors = document.getElementById('journal-associate-editors').value;
+            const file = document.getElementById('journal-file').files[0];
+            const originalityDeclaration = document.getElementById('originality-declaration').checked;
+            const ethicsDeclaration = document.getElementById('ethics-declaration').checked;
+            const permissionDeclaration = document.getElementById('permission-declaration').checked;
+
+            if (!title || !category || !description || !file) {
+                alert('Please fill in all required fields and select a file');
+                return;
+            }
+
+            if (!originalityDeclaration || !ethicsDeclaration || !permissionDeclaration) {
+                alert('Please accept all declarations to proceed');
+                return;
+            }
+
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please upload a PDF or Word document file');
+                return;
+            }
+
+            // Validate file size (10MB limit)
+            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+            if (file.size > maxSize) {
+                alert('File size should not exceed 10MB');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('category', category);
+            formData.append('description', description);
+            // Ensure the current user is included in authors
+            const authorsList = authors ? authors.split(',').map(a => a.trim()) : [];
+            if (!authorsList.includes(user.name)) {
+                authorsList.unshift(user.name);
+            }
+            formData.append('authors', authorsList.join(','));
+            formData.append('editors', editors);
+            formData.append('associateEditors', associateEditors);
+            formData.append('file', file);
+            formData.append('uploadDate', new Date().toISOString());
+            formData.append('status', 'pending');
+            formData.append('declarations', JSON.stringify({
+                originality: originalityDeclaration,
+                ethics: ethicsDeclaration,
+                permission: permissionDeclaration
+            }));
+
+            try {
+                console.log('Uploading journal with data:', {
+                    title,
+                    category,
+                    description,
+                    authors: authorsList,
+                    editors,
+                    associateEditors
+                });
+                
+                const response = await fetch(`${API_URL}/api/journals/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Upload failed');
+                }
+
+                // Show success message
+                const message = document.createElement('div');
+                message.style.position = 'fixed';
+                message.style.top = '20px';
+                message.style.right = '20px';
+                message.style.padding = '15px 25px';
+                message.style.backgroundColor = '#28a745';
+                message.style.color = 'white';
+                message.style.borderRadius = '5px';
+                message.style.zIndex = '1000';
+                message.textContent = 'Journal submitted successfully!';
+                document.body.appendChild(message);
+
+                // Clear form
+                clearForm();
+
+                // Redirect to author profile with new=true parameter
+                setTimeout(() => {
+                    message.remove();
+                    window.location.href = 'author-profile.html?new=true';
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Error uploading journal: ' + error.message);
+            }
+        }
+         // Sample journal data (replace with actual database data)
+    let journals = [];
+
+function displayMyJournals() {
+    const container = document.getElementById('my-journals-container');
+    container.innerHTML = '';
+
+    journals.forEach(journal => {
+        const journalElement = document.createElement('div');
+        journalElement.className = 'journal-item';
+        journalElement.innerHTML = `
+            <div>
+                <h4>${journal.title}</h4>
+                <p>Category: ${journal.category}</p>
+                <p>Authors: ${journal.authors.join(', ')}</p>
+                <p>Status: <span class="status-${journal.status}">${journal.status}</span></p>
+                <p>Uploaded on: ${new Date(journal.uploadDate).toLocaleDateString()}</p>
+            </div>
+            <div class="journal-actions">
+                <button class="action-btn edit-btn" onclick="editJournal(${journal.id})">Edit</button>
+                <button class="action-btn delete-btn" onclick="deleteJournal(${journal.id})">Delete</button>
+            </div>
+        `;
+        container.appendChild(journalElement);
+    });
+}
+
+function clearForm() {
+    document.getElementById('journal-title').value = '';  
+    document.getElementById('journal-category').value = '';
+    document.getElementById('journal-description').value = '';
+    document.getElementById('journal-authors').value = '';
+    document.getElementById('journal-editors').value = '';
+    document.getElementById('journal-associate-editors').value = '';
+    document.getElementById('journal-file').value = '';
+    document.getElementById('originality-declaration').checked = false;
+    document.getElementById('ethics-declaration').checked = false;
+    document.getElementById('permission-declaration').checked = false;
+    document.querySelector('.upload-area p').textContent = 'Click or drag files to upload';
+}
+
+function editJournal(id) {
+    // Implement edit functionality
+    const journal = journals.find(j => j.id === id);
+    if (journal) {
+        // Populate form with journal data 
+        document.getElementById('journal-title').value = journal.title;
+        document.getElementById('journal-category').value = journal.category;
+        document.getElementById('journal-description').value = journal.description;
+        document.getElementById('journal-authors').value = journal.authors.join(', ');
+    }
+}
+
+function deleteJournal(id) {
+    if (confirm('Are you sure you want to delete this journal?')) {
+        journals = journals.filter(j => j.id !== id);
+        displayMyJournals();
+    }
+}
+
+function toggleMenu() {
+    const hamburger = document.querySelector('.hamburger');
+    const nav = document.querySelector('.main-nav');
+    const overlay = document.querySelector('.nav-overlay');
+    
+    hamburger.classList.toggle('active');
+    nav.classList.toggle('active');
+    overlay.classList.toggle('active');
+    
+    // Prevent body scrolling when menu is open
+    document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
+}
+    </script>
+</body>
+</html>

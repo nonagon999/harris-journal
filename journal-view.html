@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harris Journal - View Journal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .journal-view-container {
+            max-width: 1000px;
+            margin: 100px auto;
+            padding: 20px;
+        }
+
+        .journal-details {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .journal-header {
+            margin-bottom: 30px;
+        }
+
+        .journal-title {
+            font-size: 2em;
+            color: #003366;
+            margin-bottom: 10px;
+        }
+
+        .journal-meta {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .journal-category {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .journal-authors {
+            margin-bottom: 20px;
+        }
+
+        .author-list {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .journal-description {
+            margin-bottom: 30px;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .journal-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .download-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+
+        .back-btn {
+            background-color: #003366;
+            color: white;
+        }
+
+        .back-btn:hover {
+            background-color: #002244;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .journal-view-container {
+                padding: 10px;
+            }
+
+            .journal-details {
+                padding: 20px;
+            }
+
+            .journal-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .journal-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="image/logo.png" alt="Harris Memorial College Logo">
+                <h3>Harris Memorial College, Inc.</h3>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="journal-library.html">Journal Library</a></li>
+                    <li><a href="journal.html">Upload Journal</a></li>
+                    <li><a href="index.html#contact">Contact Us</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="journal-view-container">
+        <div class="journal-details" id="journalDetails">
+            <!-- Journal details will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        async function loadJournalDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const journalId = urlParams.get('id');
+
+            if (!journalId) {
+                alert('No journal ID provided');
+                window.location.href = 'journal-library.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/journals/${journalId}`);
+                if (!response.ok) {
+                    throw new Error('Journal not found');
+                }
+
+                const journal = await response.json();
+                displayJournalDetails(journal);
+            } catch (error) {
+                console.error('Error loading journal:', error);
+                alert('Error loading journal details. Please try again later.');
+                window.location.href = 'journal-library.html';
+            }
+        }
+
+        function displayJournalDetails(journal) {
+            const detailsContainer = document.getElementById('journalDetails');
+            detailsContainer.innerHTML = `
+                <div class="journal-header">
+                    <h1 class="journal-title">${journal.title}</h1>
+                    <div class="journal-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>Uploaded: ${new Date(journal.uploadDate).toLocaleDateString()}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-tag"></i>
+                            <span class="journal-category">${journal.category}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="status-badge status-${journal.status}">${journal.status}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="journal-authors">
+                    <h3>Authors</h3>
+                    <div class="author-list">${journal.authors.join(', ')}</div>
+                </div>
+
+                <div class="journal-description">
+                    <h3>Abstract</h3>
+                    <p>${journal.description}</p>
+                </div>
+
+                <div class="journal-actions">
+                    <button class="action-btn download-btn" onclick="downloadJournal('${journal._id}')">
+                        <i class="fas fa-download"></i> Download Journal
+                    </button>
+                    <button class="action-btn back-btn" onclick="window.location.href='journal-library.html'">
+                        <i class="fas fa-arrow-left"></i> Back to Library
+                    </button>
+                </div>
+            `;
+        }
+
+        async function downloadJournal(id) {
+            try {
+                const response = await fetch(`/api/journals/${id}`);
+                const journal = await response.json();
+                window.location.href = journal.fileUrl;
+            } catch (error) {
+                console.error('Error downloading journal:', error);
+                alert('Error downloading journal. Please try again later.');
+            }
+        }
+
+        // Load journal details when page loads
+        document.addEventListener('DOMContentLoaded', loadJournalDetails);
+    </script>
+</body>
+</html> 

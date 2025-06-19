@@ -11,18 +11,25 @@ const { OAuth2Client } = require('google-auth-library');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const config = require('./config');
+const { sendEmail } = require('./emailConfig');
 const app = express();
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(GOOGLE_CLIENT_ID, null, {
+    // Disable the deprecated package warning
+    ignoreDeprecationWarning: true
+});
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+app.use('/image', express.static(path.join(__dirname, 'image')));
 app.use('/uploads', express.static(path.join(__dirname, config.uploadDir)));
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false // Disable CSP for development
+}));
 app.use(express.json({ limit: '10kb' }));
 
 // Rate limiting
@@ -41,10 +48,20 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, config.uploadDir);
+// Update the upload directory configuration for Vercel
+const uploadsDir = process.env.NODE_ENV === 'production' 
+    ? path.join(__dirname, 'public', 'uploads')  // Use public/uploads for persistence
+    : path.join(__dirname, 'uploads');
+
+// Ensure upload directory exists
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Also ensure public/uploads exists for static serving
+const publicUploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(publicUploadsDir)) {
+    fs.mkdirSync(publicUploadsDir, { recursive: true });
 }
 
 // Remove duplicate uploads directory if it exists
@@ -54,19 +71,33 @@ if (fs.existsSync(duplicateDir)) {
 }
 
 // MongoDB Connection with improved error handling
-mongoose.connect(config.mongoUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-    socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-})
-.then(() => {
-    console.log('Successfully connected to MongoDB Atlas');
-})
-.catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-});
+const connectDB = async () => {
+    try {
+        const options = {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+            retryWrites: true,
+            w: 'majority'
+        };
+
+        await mongoose.connect(config.mongoUri, options);
+        console.log('Successfully connected to MongoDB Atlas');
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+        // In production, we'll retry the connection
+        if (process.env.NODE_ENV === 'production') {
+            console.log('Retrying connection in 5 seconds...');
+            setTimeout(connectDB, 5000);
+        } else {
+            process.exit(1);
+        }
+    }
+};
+
+// Connect to MongoDB
+connectDB();
 
 // Add connection event handlers
 mongoose.connection.on('connected', () => {
@@ -75,10 +106,18 @@ mongoose.connection.on('connected', () => {
 
 mongoose.connection.on('error', (err) => {
     console.error('Mongoose connection error:', err);
+    if (process.env.NODE_ENV === 'production') {
+        console.log('Attempting to reconnect...');
+        setTimeout(connectDB, 5000);
+    }
 });
 
 mongoose.connection.on('disconnected', () => {
     console.log('Mongoose disconnected from MongoDB Atlas');
+    if (process.env.NODE_ENV === 'production') {
+        console.log('Attempting to reconnect...');
+        setTimeout(connectDB, 5000);
+    }
 });
 
 // Handle application termination
@@ -93,19 +132,14 @@ process.on('SIGINT', async () => {
     }
 });
 
-// Configure multer for file uploads
+// Configure multer storage
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        console.log('Multer destination directory:', uploadsDir);
         cb(null, uploadsDir);
     },
     filename: function (req, file, cb) {
-        // Sanitize filename and add timestamp
-        const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const filename = Date.now() + '-' + sanitizedFilename;
-        console.log('Saving file as:', filename);
-        console.log('Full path will be:', path.join(uploadsDir, filename));
-        cb(null, filename);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
@@ -164,7 +198,12 @@ const userSchema = new mongoose.Schema({
     lastPasswordChange: { type: Date, default: Date.now },
     passwordHistory: [{ type: String }],
     journalCount: { type: Number, default: 0 },
-    profilePhoto: { type: String }
+    profilePhoto: { type: String },
+    verificationPin: { type: String },
+    pinExpiry: { type: Date },
+    resetToken: { type: String },
+    resetExpiry: { type: Date },
+    isVerified: { type: Boolean, default: false }
 });
 
 const User = mongoose.model('User', userSchema);
@@ -187,9 +226,9 @@ const journalSchema = new mongoose.Schema({
 
 const Journal = mongoose.model('Journal', journalSchema);
 
-// Serve HTML files
+// Serve index.html as the default page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'journal.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/journal-library', (req, res) => {
@@ -198,6 +237,11 @@ app.get('/journal-library', (req, res) => {
 
 app.get('/author-profile', (req, res) => {
     res.sendFile(path.join(__dirname, 'author-profile.html'));
+});
+
+// Serve static files
+app.get('/styles.css', (req, res) => {
+    res.sendFile(path.join(__dirname, 'styles.css'));
 });
 
 // API Routes
@@ -256,6 +300,18 @@ app.post('/api/journals/upload', uploadJournal.single('file'), async (req, res) 
             );
         }
 
+        // Send submission confirmation email
+        if (processedAuthors.length > 0) {
+            const mainAuthor = processedAuthors[0];
+            const author = await User.findOne({ name: mainAuthor });
+            if (author) {
+                await sendEmail(author.email, 'journalSubmission', {
+                    name: author.name,
+                    journalTitle: title
+                });
+            }
+        }
+
         res.status(201).json(savedJournal);
     } catch (error) {
         console.error('Error uploading journal:', error);
@@ -270,17 +326,35 @@ app.post('/api/journals/upload', uploadJournal.single('file'), async (req, res) 
 // Get all journals
 app.get('/api/journals', async (req, res) => {
     try {
-        const journals = await Journal.find().sort({ uploadDate: -1 });
-        console.log('Retrieved journals:', journals.map(j => ({
-            title: j.title,
-            authors: j.authors,
-            editors: j.editors,
-            associateEditors: j.associateEditors
-        })));
+        // Check database connection
+        if (mongoose.connection.readyState !== 1) {
+            console.error('Database not connected. Current state:', mongoose.connection.readyState);
+            return res.status(503).json({ message: 'Database connection not ready' });
+        }
+
+        const journals = await Journal.find()
+            .sort({ uploadDate: -1 })
+            .lean()
+            .exec();
+
+        console.log(`Successfully retrieved ${journals.length} journals`);
+        
+        // Log first few journals for debugging
+        if (journals.length > 0) {
+            console.log('Sample journals:', journals.slice(0, 3).map(j => ({
+                id: j._id,
+                title: j.title,
+                authors: j.authors
+            })));
+        }
+
         res.json(journals);
     } catch (error) {
         console.error('Error fetching journals:', error);
-        res.status(500).json({ message: 'Error fetching journals: ' + error.message });
+        res.status(500).json({ 
+            message: 'Error fetching journals',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
     }
 });
 
@@ -624,7 +698,7 @@ app.post('/api/auth/google', async (req, res) => {
     }
 });
 
-// Add resend PIN endpoint
+// Update the resend PIN endpoint
 app.post('/api/auth/resend-pin', async (req, res) => {
     try {
         const { email } = req.body;
@@ -643,29 +717,51 @@ app.post('/api/auth/resend-pin', async (req, res) => {
         user.pinExpiry = pinExpiry;
         await user.save();
 
-        // Send new verification email
-        const mailOptions = {
-            from: 'your-email@gmail.com', // Replace with your email
-            to: email,
-            subject: 'New Verification PIN - Harris Journal',
-            html: `
-                <h2>New Verification PIN</h2>
-                <p>Dear ${user.name},</p>
-                <p>Here is your new verification PIN:</p>
-                <h1 style="color: #003366; font-size: 24px; letter-spacing: 5px;">${verificationPin}</h1>
-                <p>This PIN will expire in 10 minutes.</p>
-                <p>If you did not request this PIN, please ignore this email.</p>
-                <br>
-                <p>Best regards,</p>
-                <p>Harris Journal Team</p>
-            `
-        };
+        // Send new verification email using the new email configuration
+        await sendEmail(email, 'verification', {
+            name: user.name,
+            pin: verificationPin
+        });
 
-        await transporter.sendMail(mailOptions);
         res.json({ message: 'New PIN sent successfully' });
     } catch (error) {
         console.error('Resend PIN error:', error);
         res.status(500).json({ message: 'Error sending new PIN' });
+    }
+});
+
+// Add password reset request endpoint
+app.post('/api/auth/request-password-reset', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+        // Update user with reset token
+        user.resetToken = resetToken;
+        user.resetExpiry = resetExpiry;
+        await user.save();
+
+        // Create reset link
+        const resetLink = `${config.baseUrl}/reset-password?token=${resetToken}`;
+
+        // Send password reset email
+        await sendEmail(email, 'passwordReset', {
+            name: user.name,
+            resetLink
+        });
+
+        res.json({ message: 'Password reset email sent' });
+    } catch (error) {
+        console.error('Password reset request error:', error);
+        res.status(500).json({ message: 'Error sending password reset email' });
     }
 });
 
@@ -791,9 +887,214 @@ app.post('/api/auth/upload-photo', uploadPhoto.single('photo'), async (req, res)
     }
 });
 
+// Add journal status update notification
+app.put('/api/journals/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+        const journal = await Journal.findById(req.params.id);
+        
+        if (!journal) {
+            return res.status(404).json({ message: 'Journal not found' });
+        }
+
+        journal.status = status;
+        await journal.save();
+
+        // Send status update email to authors
+        for (const authorName of journal.authors) {
+            const author = await User.findOne({ name: authorName });
+            if (author) {
+                await sendEmail(author.email, 'journalStatusUpdate', {
+                    name: author.name,
+                    journalTitle: journal.title,
+                    status
+                });
+            }
+        }
+
+        res.json({ message: 'Status updated successfully' });
+    } catch (error) {
+        console.error('Error updating journal status:', error);
+        res.status(500).json({ message: 'Error updating journal status' });
+    }
+});
+
+// Add user verification endpoint (for testing purposes)
+app.get('/api/admin/verify-user/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        // Find user and exclude sensitive data
+        const user = await User.findOne({ email }).select('-password -passwordHistory -resetToken -resetExpiry');
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Get user's journals
+        const journals = await Journal.find({ authors: user.name })
+            .select('title status uploadDate')
+            .sort({ uploadDate: -1 });
+
+        res.json({
+            user: {
+                name: user.name,
+                email: user.email,
+                registrationDate: user.registrationDate,
+                journalCount: user.journalCount,
+                profilePhoto: user.profilePhoto,
+                isVerified: user.isVerified,
+                accountLocked: user.accountLocked
+            },
+            journals: journals
+        });
+    } catch (error) {
+        console.error('Error verifying user:', error);
+        res.status(500).json({ message: 'Error verifying user' });
+    }
+});
+
+// Add user registration verification endpoint
+app.post('/api/auth/verify-registration', async (req, res) => {
+    try {
+        const { email, pin } = req.body;
+        
+        const user = await User.findOne({ 
+            email,
+            verificationPin: pin,
+            pinExpiry: { $gt: new Date() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired PIN' });
+        }
+
+        // Update user verification status
+        user.isVerified = true;
+        user.verificationPin = undefined;
+        user.pinExpiry = undefined;
+        await user.save();
+
+        res.json({ 
+            message: 'Email verified successfully',
+            user: {
+                name: user.name,
+                email: user.email,
+                isVerified: true
+            }
+        });
+    } catch (error) {
+        console.error('Error verifying registration:', error);
+        res.status(500).json({ message: 'Error verifying registration' });
+    }
+});
+
+// Add sample journals endpoint
+app.post('/api/populate-journals', async (req, res) => {
+    try {
+        // Check database connection
+        if (mongoose.connection.readyState !== 1) {
+            return res.status(503).json({ message: 'Database connection not ready' });
+        }
+
+        // Sample journal data
+        const sampleJournals = [
+            {
+                title: "The Impact of Technology on Modern Education",
+                category: "Educational Technology",
+                description: "This research paper explores how digital technologies are transforming traditional educational methods and improving student engagement and learning outcomes.",
+                authors: ["Dr. Sarah Johnson", "Prof. Michael Chen"],
+                editors: ["Dr. Emily Rodriguez"],
+                associateEditors: ["Prof. David Kim"],
+                fileUrl: "sample-journal-1.pdf",
+                views: 150,
+                downloads: 45,
+                citations: 12
+            },
+            {
+                title: "Innovative Teaching Methods in STEM Education",
+                category: "STEM Education",
+                description: "A comprehensive study on implementing project-based learning and hands-on activities in science, technology, engineering, and mathematics classrooms.",
+                authors: ["Dr. Robert Williams", "Dr. Lisa Thompson"],
+                editors: ["Prof. James Anderson"],
+                associateEditors: ["Dr. Maria Garcia"],
+                fileUrl: "sample-journal-2.pdf",
+                views: 89,
+                downloads: 23,
+                citations: 8
+            },
+            {
+                title: "The Role of Emotional Intelligence in Student Success",
+                category: "Psychology in Education",
+                description: "This paper examines how emotional intelligence skills contribute to academic achievement and social development in students.",
+                authors: ["Dr. Jennifer Davis", "Prof. Thomas Wilson"],
+                editors: ["Dr. Amanda Brown"],
+                associateEditors: ["Prof. Christopher Lee"],
+                fileUrl: "sample-journal-3.pdf",
+                views: 203,
+                downloads: 67,
+                citations: 19
+            },
+            {
+                title: "Digital Literacy in the 21st Century Classroom",
+                category: "Digital Education",
+                description: "An analysis of digital literacy skills required for students to succeed in the modern digital world and how educators can foster these skills.",
+                authors: ["Dr. Patricia Martinez", "Dr. Kevin Taylor"],
+                editors: ["Prof. Rachel Green"],
+                associateEditors: ["Dr. Steven White"],
+                fileUrl: "sample-journal-4.pdf",
+                views: 134,
+                downloads: 38,
+                citations: 15
+            },
+            {
+                title: "Inclusive Education: Strategies for Diverse Classrooms",
+                category: "Special Education",
+                description: "This research presents effective strategies for creating inclusive learning environments that accommodate students with diverse learning needs.",
+                authors: ["Dr. Michelle Clark", "Prof. Daniel Lewis"],
+                editors: ["Dr. Rebecca Hall"],
+                associateEditors: ["Prof. Andrew Scott"],
+                fileUrl: "sample-journal-5.pdf",
+                views: 178,
+                downloads: 52,
+                citations: 11
+            }
+        ];
+
+        // Clear existing journals
+        await Journal.deleteMany({});
+        console.log('Cleared existing journals');
+
+        // Add sample journals
+        const result = await Journal.insertMany(sampleJournals);
+        console.log(`Successfully added ${result.length} sample journals`);
+
+        res.json({ 
+            message: `Successfully added ${result.length} sample journals`,
+            journals: result.map(j => ({ id: j._id, title: j.title, category: j.category }))
+        });
+    } catch (error) {
+        console.error('Error populating journals:', error);
+        res.status(500).json({ 
+            message: 'Error populating journals',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Server error:', err);
+    console.error('Error stack:', err.stack);
+    
+    // Check if it's a MongoDB connection error
+    if (err.name === 'MongoServerError' || err.name === 'MongooseError') {
+        return res.status(503).json({
+            message: 'Database connection error. Please try again later.',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
+    }
+    
     res.status(500).json({ 
         message: err.message || 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err.stack : undefined
@@ -802,8 +1103,9 @@ app.use((err, req, res, next) => {
 
 // Update the server start code at the bottom
 const startServer = () => {
-    app.listen(config.port, () => {
-        console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${config.port}`);
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${port}`);
         console.log(`Upload directory: ${uploadsDir}`);
     }).on('error', (err) => {
         console.error('Server error:', err);
@@ -811,4 +1113,10 @@ const startServer = () => {
     });
 };
 
-startServer();
+// Only start the server if we're not in a serverless environment
+if (process.env.NODE_ENV !== 'production') {
+    startServer();
+}
+
+// Export the Express app for Vercel
+module.exports = app;
